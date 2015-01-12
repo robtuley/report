@@ -1,7 +1,7 @@
 package report
 
 import (
-	"log"
+	"os"
 )
 
 func init() {
@@ -10,6 +10,7 @@ func init() {
 
 func broadcastDataEvents(in chan string) {
 	for {
-		log.Println(<-in)
+		os.Stdout.Write([]byte(<-in))
+		os.Stdout.Write([]byte("\n"))
 	}
 }

@@ -4,8 +4,8 @@ package report
 //
 //     report.Info("http.request", report.Data{"path":req.URL.Path, "ua":req.UserAgent()})
 //
-func Info(event string, payload Data) {
-	payload["type"] = "info"
+func Action(event string, payload Data) {
+	payload["type"] = "action"
 	payload["event"] = event
 
 	rawEventChannel <- payload
