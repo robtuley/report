@@ -15,6 +15,6 @@ func BenchmarkInfo(b *testing.B) {
 func BenchmarkAction(b *testing.B) {
 	Global(Data{"application": "myAppName"})
 	for i := 0; i < b.N; i++ {
-		Action("event.name", Data{"a": "aString", "error": errors.New("a test")})
+		Action("event.name", Data{"a": "aString", "error": errors.New("a test").Error()})
 	}
 }
