@@ -64,7 +64,7 @@ func splunkStormForwarder(in chan string, apiUrl string, projectId string, acces
 		go func(data *bytes.Buffer) {
 			req, err := http.NewRequest("POST", to.String(), buffer)
 			req.SetBasicAuth("x", accessKey)
-			req.Header.Set("Content-Type", "application/json")
+			req.Header.Set("Content-Type", "text/plain")
 
 			resp, err := client.Do(req)
 			if err != nil {
