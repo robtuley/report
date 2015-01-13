@@ -5,7 +5,7 @@ An opinonated telemetry & logging utility for Go.
 
 + one global logging stream per application
 + formatted as a stream of mostly unstructured JSON data events 
-+ transport via UDP to an aggregator
++ transport to an aggregator (e.g. Splunk Storm)
 
 Log Events
 -----------
