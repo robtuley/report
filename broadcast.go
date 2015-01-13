@@ -9,21 +9,24 @@ import (
 	"time"
 )
 
-func init() {
-	go stdout(jsonEventChannel)
+func StdOut() {
+	go stdoutWriter(jsonEventChannel)
 }
 
-func stdout(in chan string) {
+func stdoutWriter(in chan string) {
 	for {
 		log.Println("json:>", <-in)
 	}
 }
 
-func splunkStorm(in chan string, apiUrl string, projectId string, accessKey string) {
+func SplunkStorm(apiUrl string, projectId string, accessKey string) {
 	log.Println("reporting:> splunkstorm")
 	log.Println("url:> ", apiUrl)
 	log.Println("project:> ", projectId)
+	go splunkStormForwarder(jsonEventChannel, apiUrl, projectId, accessKey)
+}
 
+func splunkStormForwarder(in chan string, apiUrl string, projectId string, accessKey string) {
 	var to *url.URL
 	to, err := url.Parse(apiUrl)
 	if err != nil {
