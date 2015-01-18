@@ -14,12 +14,6 @@ func SplunkStorm(apiUrl string, projectId string, accessKey string) {
 	log.Println("reporting:> splunkstorm")
 	log.Println("url:> ", apiUrl)
 	log.Println("project:> ", projectId)
-	go splunkStormForwarder(apiUrl, projectId, accessKey)
-}
-
-func splunkStormForwarder(apiUrl string, projectId string, accessKey string) {
-	var wg sync.WaitGroup
-	stopping := false
 
 	var to *url.URL
 	to, err := url.Parse(apiUrl)
@@ -32,17 +26,18 @@ func splunkStormForwarder(apiUrl string, projectId string, accessKey string) {
 	params.Add("sourcetype", "json_auto_timestamp")
 	to.RawQuery = params.Encode()
 
+	go splunkStormForwarder(to.String(), accessKey)
+}
+
+func splunkStormForwarder(url string, accessKey string) {
+	var wg sync.WaitGroup
+	stopping := false
+
 	client := &http.Client{}
-	timeout := make(chan bool, 1)
-	var buffer *bytes.Buffer
+	ticker := time.NewTicker(2 * time.Second)
 
 	for {
-		buffer = bytes.NewBuffer(nil)
-
-		go func() {
-			time.Sleep(2 * time.Second)
-			timeout <- true
-		}()
+		buffer := ""
 
 	buffering:
 		for {
@@ -52,25 +47,33 @@ func splunkStormForwarder(apiUrl string, projectId string, accessKey string) {
 					stopping = true
 					break buffering
 				}
-				buffer.WriteString(json)
-				buffer.WriteString("\n")
-			case <-timeout:
-				break buffering
+				if len(buffer) > 0 {
+					buffer += "\n"
+				}
+				buffer += json
+			case <-ticker.C:
+				if len(buffer) > 0 {
+					break buffering
+				}
 			}
 		}
 
-		if buffer.Len() > 0 {
+		if len(buffer) > 0 {
 			wg.Add(1)
-			go func(data *bytes.Buffer) {
+			go func(data string) {
 				defer wg.Done()
 
-				req, err := http.NewRequest("POST", to.String(), buffer)
+				req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(buffer)))
+				if err != nil {
+					log.Println("error:> ", err)
+					return
+				}
 				req.SetBasicAuth("x", accessKey)
 				req.Header.Set("Content-Type", "text/plain")
 
 				resp, err := client.Do(req)
 				if err != nil {
-					log.Println("error:> ", err.Error())
+					log.Println("error:> ", err)
 					return
 				}
 
@@ -78,7 +81,7 @@ func splunkStormForwarder(apiUrl string, projectId string, accessKey string) {
 				var msg map[string]interface{}
 				err = decoder.Decode(&msg)
 				if err != nil {
-					log.Println("error:> ", err.Error())
+					log.Println("error:> ", err)
 					return
 				}
 
@@ -93,6 +96,7 @@ func splunkStormForwarder(apiUrl string, projectId string, accessKey string) {
 		}
 
 		if stopping {
+			ticker.Stop()
 			wg.Wait()
 			channel.Drain <- true
 			return
