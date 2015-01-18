@@ -10,21 +10,6 @@ import (
 	"time"
 )
 
-func StdOut() {
-	go stdoutWriter()
-}
-
-func stdoutWriter() {
-	for {
-		json, more := <-channel.JsonEncoded
-		if !more {
-			channel.Drain <- true
-			return
-		}
-		log.Println("json:>", json)
-	}
-}
-
 func SplunkStorm(apiUrl string, projectId string, accessKey string) {
 	log.Println("reporting:> splunkstorm")
 	log.Println("url:> ", apiUrl)
