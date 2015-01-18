@@ -5,7 +5,7 @@ import (
 )
 
 func Global(payload Data) {
-	addGlobalChannel <- payload
+	channel.AddGlobal <- payload
 }
 
 func init() {
@@ -14,17 +14,17 @@ func init() {
 
 		for {
 			select {
-			case evt, more := <-rawEventChannel:
+			case evt, more := <-channel.RawEvents:
 				if !more {
-					drainChannel <- true
+					channel.Drain <- true
 					return
 				}
 				evt["timestamp"] = time.Now().Unix()
 				for k, v := range globals {
 					evt[k] = v
 				}
-				withGlobalsEventChannel <- evt
-			case g := <-addGlobalChannel:
+				channel.WithGlobals <- evt
+			case g := <-channel.AddGlobal:
 				for k, v := range g {
 					globals[k] = v
 				}

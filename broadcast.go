@@ -11,14 +11,14 @@ import (
 )
 
 func StdOut() {
-	go stdoutWriter(jsonEventChannel)
+	go stdoutWriter()
 }
 
-func stdoutWriter(in chan string) {
+func stdoutWriter() {
 	for {
-		json, more := <-in
+		json, more := <-channel.JsonEncoded
 		if !more {
-			drainChannel <- true
+			channel.Drain <- true
 			return
 		}
 		log.Println("json:>", json)
@@ -62,7 +62,7 @@ func splunkStormForwarder(apiUrl string, projectId string, accessKey string) {
 	buffering:
 		for {
 			select {
-			case json, more := <-jsonEventChannel:
+			case json, more := <-channel.JsonEncoded:
 				if !more {
 					stopping = true
 					break buffering
@@ -109,7 +109,7 @@ func splunkStormForwarder(apiUrl string, projectId string, accessKey string) {
 
 		if stopping {
 			wg.Wait()
-			drainChannel <- true
+			channel.Drain <- true
 			return
 		}
 	}

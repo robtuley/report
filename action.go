@@ -8,5 +8,5 @@ func Action(event string, payload Data) {
 	payload["type"] = "action"
 	payload["event"] = event
 
-	rawEventChannel <- payload
+	channel.RawEvents <- payload
 }

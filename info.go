@@ -8,5 +8,5 @@ func Info(event string, payload Data) {
 	payload["type"] = "info"
 	payload["event"] = event
 
-	rawEventChannel <- payload
+	channel.RawEvents <- payload
 }

@@ -8,9 +8,9 @@ import (
 func init() {
 	go func() {
 		for {
-			data, more := <-withGlobalsEventChannel
+			data, more := <-channel.WithGlobals
 			if !more {
-				drainChannel <- true
+				channel.Drain <- true
 				return
 			}
 			json, err := map2Json(data)
@@ -18,7 +18,7 @@ func init() {
 				log.Println("error:> json encoding ", data)
 				continue
 			}
-			jsonEventChannel <- json
+			channel.JsonEncoded <- json
 		}
 	}()
 }

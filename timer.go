@@ -13,7 +13,7 @@ func Tock(start time.Time, event string, payload Data) {
 	payload["event"] = event
 	payload["ns"] = time.Now().Sub(start).Nanoseconds()
 
-	rawEventChannel <- payload
+	channel.RawEvents <- payload
 }
 
 func Tick() time.Time {
