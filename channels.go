@@ -1,5 +1,9 @@
 package report
 
+import (
+	"log"
+)
+
 // string-keyed map of unstructured data relevant to the event
 type Data map[string]interface{}
 
@@ -17,6 +21,7 @@ var channel struct {
 	AddGlobal   chan Data
 	JsonEncoded chan string
 	Drain       chan bool
+	IsDraining  bool
 }
 
 func init() {
@@ -25,10 +30,13 @@ func init() {
 	channel.AddGlobal = make(chan Data)
 	channel.JsonEncoded = make(chan string, 50)
 	channel.Drain = make(chan bool)
+	channel.IsDraining = false
 }
 
 // waits for events to drain down before exiting
 func Drain() {
+	channel.IsDraining = true
+
 	close(channel.RawEvents)
 	<-channel.Drain
 
@@ -37,4 +45,12 @@ func Drain() {
 
 	close(channel.JsonEncoded)
 	<-channel.Drain
+}
+
+func publishRawEvent(payload Data) {
+	if channel.IsDraining {
+		log.Println("discarded:>", payload)
+		return
+	}
+	channel.RawEvents <- payload
 }
