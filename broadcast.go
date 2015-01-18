@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 )
 
@@ -15,7 +16,12 @@ func StdOut() {
 
 func stdoutWriter(in chan string) {
 	for {
-		log.Println("json:>", <-in)
+		json, more := <-in
+		if !more {
+			drainChannel <- true
+			return
+		}
+		log.Println("json:>", json)
 	}
 }
 
@@ -23,10 +29,13 @@ func SplunkStorm(apiUrl string, projectId string, accessKey string) {
 	log.Println("reporting:> splunkstorm")
 	log.Println("url:> ", apiUrl)
 	log.Println("project:> ", projectId)
-	go splunkStormForwarder(jsonEventChannel, apiUrl, projectId, accessKey)
+	go splunkStormForwarder(apiUrl, projectId, accessKey)
 }
 
-func splunkStormForwarder(in chan string, apiUrl string, projectId string, accessKey string) {
+func splunkStormForwarder(apiUrl string, projectId string, accessKey string) {
+	var wg sync.WaitGroup
+	stopping := false
+
 	var to *url.URL
 	to, err := url.Parse(apiUrl)
 	if err != nil {
@@ -43,7 +52,7 @@ func splunkStormForwarder(in chan string, apiUrl string, projectId string, acces
 	var buffer *bytes.Buffer
 
 	for {
-		buffer = bytes.NewBuffer([]byte(<-in))
+		buffer = bytes.NewBuffer(nil)
 
 		go func() {
 			time.Sleep(2 * time.Second)
@@ -53,40 +62,55 @@ func splunkStormForwarder(in chan string, apiUrl string, projectId string, acces
 	buffering:
 		for {
 			select {
-			case json := <-in:
-				buffer.WriteString("\n")
+			case json, more := <-jsonEventChannel:
+				if !more {
+					stopping = true
+					break buffering
+				}
 				buffer.WriteString(json)
+				buffer.WriteString("\n")
 			case <-timeout:
 				break buffering
 			}
 		}
 
-		go func(data *bytes.Buffer) {
-			req, err := http.NewRequest("POST", to.String(), buffer)
-			req.SetBasicAuth("x", accessKey)
-			req.Header.Set("Content-Type", "text/plain")
+		if buffer.Len() > 0 {
+			wg.Add(1)
+			go func(data *bytes.Buffer) {
+				defer wg.Done()
 
-			resp, err := client.Do(req)
-			if err != nil {
-				log.Println("error:> ", err.Error())
-				return
-			}
+				req, err := http.NewRequest("POST", to.String(), buffer)
+				req.SetBasicAuth("x", accessKey)
+				req.Header.Set("Content-Type", "text/plain")
 
-			decoder := json.NewDecoder(resp.Body)
-			var msg map[string]interface{}
-			err = decoder.Decode(&msg)
-			if err != nil {
-				log.Println("error:> ", err.Error())
-				return
-			}
+				resp, err := client.Do(req)
+				if err != nil {
+					log.Println("error:> ", err.Error())
+					return
+				}
 
-			_, ok := msg["bytes"]
-			if ok {
-				log.Println("sent:> ", msg["bytes"])
-			} else {
-				log.Println("error:>", msg)
-			}
+				decoder := json.NewDecoder(resp.Body)
+				var msg map[string]interface{}
+				err = decoder.Decode(&msg)
+				if err != nil {
+					log.Println("error:> ", err.Error())
+					return
+				}
 
-		}(buffer)
+				_, ok := msg["bytes"]
+				if ok {
+					log.Println("sent:> ", msg["bytes"])
+				} else {
+					log.Println("error:>", msg)
+				}
+
+			}(buffer)
+		}
+
+		if stopping {
+			wg.Wait()
+			drainChannel <- true
+			return
+		}
 	}
 }

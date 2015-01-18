@@ -2,19 +2,25 @@ package report
 
 import (
 	"encoding/json"
+	"log"
 )
 
 func init() {
-	go serializeDataEvents(withGlobalsEventChannel, jsonEventChannel)
-}
-
-func serializeDataEvents(in chan Data, out chan string) {
-	for {
-		json, err := map2Json(<-in)
-		if err == nil {
-			out <- json
+	go func() {
+		for {
+			data, more := <-withGlobalsEventChannel
+			if !more {
+				drainChannel <- true
+				return
+			}
+			json, err := map2Json(data)
+			if err != nil {
+				log.Println("error:> json encoding ", data)
+				continue
+			}
+			jsonEventChannel <- json
 		}
-	}
+	}()
 }
 
 func map2Json(d Data) (string, error) {

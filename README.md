@@ -22,6 +22,7 @@ Usage
 See `example/helloworld.go`:
 
     func main() {
+    	defer report.Drain()		
     	report.StdOut()
     	// OR more likely:
     	// report.SplunkStorm("yourUrl", "yourProjectId", "yourAccessKey")

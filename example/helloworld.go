@@ -7,6 +7,7 @@ import (
 )
 
 func main() {
+	defer report.Drain()
 	report.StdOut()
 	// OR more likely:
 	// report.SplunkStorm("yourUrl", "yourProjectId", "yourAccessKey")
