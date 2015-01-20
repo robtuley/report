@@ -77,6 +77,7 @@ func splunkStormForwarder(url string, accessKey string) {
 					return
 				}
 
+				defer resp.Body.Close()
 				decoder := json.NewDecoder(resp.Body)
 				var msg map[string]interface{}
 				err = decoder.Decode(&msg)
