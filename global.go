@@ -4,6 +4,10 @@ import (
 	"time"
 )
 
+// Add a global data element to all logged events (e.g. if aggregating across micro-services).
+//
+//     report.Global(report.Data{"service":"MyServiceName","version":"1.5.2"})
+//
 func Global(payload Data) {
 	channel.AddGlobal <- payload
 }

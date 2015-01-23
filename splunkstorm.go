@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+// Forward all reported events into a Splunk Storm account
 func SplunkStorm(apiUrl string, projectId string, accessKey string) {
 	log.Println("reporting:> splunkstorm")
 	log.Println("url:> ", apiUrl)

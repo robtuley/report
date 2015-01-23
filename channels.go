@@ -33,7 +33,13 @@ func init() {
 	channel.IsDraining = false
 }
 
-// waits for events to drain down before exiting
+// waits for events to drain down before exiting, usually called before exit on main func
+//
+//	func main {
+//		defer report.Drain()
+//
+//		// ... snip ...
+//	}
 func Drain() {
 	channel.IsDraining = true
 

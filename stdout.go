@@ -4,6 +4,7 @@ import (
 	"log"
 )
 
+// Write all recorded events to stdout
 func StdOut() {
 	go stdoutWriter()
 }
