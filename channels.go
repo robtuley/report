@@ -1,3 +1,4 @@
+// Telemetry & logging utility to record unstructured data events for aggregation
 package report
 
 import (

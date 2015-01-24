@@ -1,3 +1,4 @@
+// Example webserver demonstrating report package logging
 package main
 
 import (
