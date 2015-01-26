@@ -1,7 +1,7 @@
 package report
 
 import (
-	"log"
+	"os"
 )
 
 // Write all recorded events to stdout
@@ -16,6 +16,6 @@ func stdoutWriter() {
 			channel.Drain <- true
 			return
 		}
-		log.Println("json:>", json)
+		os.Stdout.Write([]byte(json + "\n"))
 	}
 }
