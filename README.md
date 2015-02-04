@@ -7,7 +7,7 @@ An opinonated telemetry & logging utility for Go.
 
 + one global logging stream per application
 + formatted as a stream of mostly unstructured JSON data events 
-+ transport to an aggregator (e.g. Splunk Storm)
++ transport to an aggregator (e.g. Loggly)
 
 Log Events
 -----------
@@ -27,10 +27,10 @@ See `example/helloworld.go`:
     	defer report.Drain()		
     	report.StdOut()
     	// OR more likely:
-    	// report.SplunkStorm("yourUrl", "yourProjectId", "yourAccessKey")
+    	// report.BatchPostToUrl("yourLogglyBulkUploadUrl")
     
     	// add data for all log events if mixed aggregation
-    	report.Global(report.Data{"application": "myAppName"})
+    	report.Global(report.Data{"service": "myAppName"})
     	
     	http.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
     		// timer to record response time and details

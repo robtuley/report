@@ -2,35 +2,20 @@ package report
 
 import (
 	"bytes"
-	"encoding/json"
 	"log"
 	"net/http"
-	"net/url"
 	"sync"
 	"time"
 )
 
-// Forward all reported events into a Splunk Storm account
-func SplunkStorm(apiUrl string, projectId string, accessKey string) {
-	log.Println("reporting:> splunkstorm")
-	log.Println("url:> ", apiUrl)
-	log.Println("project:> ", projectId)
+// Forward all batched events via HTTP POST
+func BatchPostToUrl(url string) {
+	log.Println("reporting:> batch POST to " + url)
 
-	var to *url.URL
-	to, err := url.Parse(apiUrl)
-	if err != nil {
-		log.Println("error:> ", err)
-		return
-	}
-	params := url.Values{}
-	params.Add("project", projectId)
-	params.Add("sourcetype", "json_auto_timestamp")
-	to.RawQuery = params.Encode()
-
-	go splunkStormForwarder(to.String(), accessKey)
+	go batchPoster(url)
 }
 
-func splunkStormForwarder(url string, accessKey string) {
+func batchPoster(url string) {
 	var wg sync.WaitGroup
 	stopping := false
 
@@ -69,7 +54,6 @@ func splunkStormForwarder(url string, accessKey string) {
 					log.Println("error:> ", err)
 					return
 				}
-				req.SetBasicAuth("x", accessKey)
 				req.Header.Set("Content-Type", "text/plain")
 
 				resp, err := client.Do(req)
@@ -77,21 +61,9 @@ func splunkStormForwarder(url string, accessKey string) {
 					log.Println("error:> ", err)
 					return
 				}
-
-				defer resp.Body.Close()
-				decoder := json.NewDecoder(resp.Body)
-				var msg map[string]interface{}
-				err = decoder.Decode(&msg)
-				if err != nil {
-					log.Println("error:> ", err)
+				if resp.StatusCode != http.StatusOK {
+					log.Println("error:> status code ", resp.StatusCode)
 					return
-				}
-
-				_, ok := msg["bytes"]
-				if ok {
-					log.Println("sent:> ", msg["bytes"])
-				} else {
-					log.Println("error:>", msg)
 				}
 
 			}(buffer)
