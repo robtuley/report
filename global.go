@@ -23,7 +23,7 @@ func init() {
 					channel.Drain <- true
 					return
 				}
-				evt["timestamp"] = time.Now().Unix()
+				evt["timestamp"] = time.Now().Format(time.RFC3339Nano)
 				for k, v := range globals {
 					evt[k] = v
 				}
