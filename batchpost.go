@@ -72,7 +72,7 @@ func batchPoster(url string) {
 		if stopping {
 			ticker.Stop()
 			wg.Wait()
-			channel.Drain <- true
+			channel.DrainSignal <- true
 			return
 		}
 	}

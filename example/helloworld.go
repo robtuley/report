@@ -5,6 +5,7 @@ import (
 	"github.com/robtuley/report"
 	"io"
 	"net/http"
+	"time"
 )
 
 func main() {
@@ -29,9 +30,14 @@ func main() {
 	// an *info* event to provide context
 	report.Info("http.listening", report.Data{"port": 8080})
 
-	err := http.ListenAndServe(":8080", nil)
-	if err != nil {
-		// an *actionable* event that needs resolution
-		report.Action("http.listening.fail", report.Data{"error": err.Error()})
-	}
+	go func() {
+		err := http.ListenAndServe(":8080", nil)
+		if err != nil {
+			// an *actionable* event that needs resolution
+			report.Action("http.listening.fail", report.Data{"error": err.Error()})
+		}
+	}()
+
+	// to demo drain exist after 30 seconds
+	<-time.After(time.Second * 30)
 }

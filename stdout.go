@@ -13,7 +13,7 @@ func stdoutWriter() {
 	for {
 		json, more := <-channel.JsonEncoded
 		if !more {
-			channel.Drain <- true
+			channel.DrainSignal <- true
 			return
 		}
 		os.Stdout.Write([]byte(json + "\n"))

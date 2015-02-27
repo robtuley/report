@@ -10,7 +10,7 @@ func init() {
 		for {
 			data, more := <-channel.WithGlobals
 			if !more {
-				channel.Drain <- true
+				channel.DrainSignal <- true
 				return
 			}
 			json, err := map2Json(data)

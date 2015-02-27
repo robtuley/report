@@ -21,7 +21,7 @@ var channel struct {
 	WithGlobals chan Data
 	AddGlobal   chan Data
 	JsonEncoded chan string
-	Drain       chan bool
+	DrainSignal chan bool
 	IsDraining  chan bool
 }
 
@@ -30,7 +30,7 @@ func init() {
 	channel.WithGlobals = make(chan Data, 50)
 	channel.AddGlobal = make(chan Data)
 	channel.JsonEncoded = make(chan string, 50)
-	channel.Drain = make(chan bool)
+	channel.DrainSignal = make(chan bool)
 	channel.IsDraining = make(chan bool)
 }
 
@@ -45,13 +45,13 @@ func Drain() {
 	close(channel.IsDraining)
 
 	close(channel.RawEvents)
-	<-channel.Drain
+	<-channel.DrainSignal
 
 	close(channel.WithGlobals)
-	<-channel.Drain
+	<-channel.DrainSignal
 
 	close(channel.JsonEncoded)
-	<-channel.Drain
+	<-channel.DrainSignal
 }
 
 func publishRawEvent(payload Data) {

@@ -31,7 +31,7 @@ func fileWriter(filename string) error {
 	for {
 		json, more := <-channel.JsonEncoded
 		if !more {
-			channel.Drain <- true
+			channel.DrainSignal <- true
 			return nil
 		}
 		if _, err = f.WriteString(json + "\n"); err != nil {

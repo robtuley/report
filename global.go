@@ -20,7 +20,7 @@ func init() {
 			select {
 			case evt, more := <-channel.RawEvents:
 				if !more {
-					channel.Drain <- true
+					channel.DrainSignal <- true
 					return
 				}
 				evt["timestamp"] = time.Now().Format(time.RFC3339Nano)
