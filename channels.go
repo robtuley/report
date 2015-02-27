@@ -5,7 +5,7 @@ import (
 	"log"
 )
 
-// string-keyed map of unstructured data relevant to the event
+// Data is a string-keyed map of unstructured data relevant to the event
 type Data map[string]interface{}
 
 //     info.go, action.go, timer.go
@@ -22,7 +22,7 @@ var channel struct {
 	AddGlobal   chan Data
 	JsonEncoded chan string
 	Drain       chan bool
-	IsDraining  bool
+	IsDraining  chan bool
 }
 
 func init() {
@@ -31,10 +31,10 @@ func init() {
 	channel.AddGlobal = make(chan Data)
 	channel.JsonEncoded = make(chan string, 50)
 	channel.Drain = make(chan bool)
-	channel.IsDraining = false
+	channel.IsDraining = make(chan bool)
 }
 
-// waits for events to drain down before exiting, usually called before exit on main func
+// Drain waits for events to drain down before exiting, usually called before exit on main func
 //
 //	func main {
 //		defer report.Drain()
@@ -42,7 +42,7 @@ func init() {
 //		// ... snip ...
 //	}
 func Drain() {
-	channel.IsDraining = true
+	close(channel.IsDraining)
 
 	close(channel.RawEvents)
 	<-channel.Drain
@@ -55,9 +55,10 @@ func Drain() {
 }
 
 func publishRawEvent(payload Data) {
-	if channel.IsDraining {
+	select {
+	case <-channel.IsDraining:
 		log.Println("discarded:>", payload)
-		return
+	default:
+		channel.RawEvents <- payload
 	}
-	channel.RawEvents <- payload
 }
