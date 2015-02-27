@@ -61,6 +61,8 @@ func batchPoster(url string) {
 					log.Println("error:> ", err)
 					return
 				}
+				defer resp.Body.Close()
+
 				if resp.StatusCode != http.StatusOK {
 					log.Println("error:> status code ", resp.StatusCode)
 					return
