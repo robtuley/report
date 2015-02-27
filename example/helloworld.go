@@ -17,6 +17,9 @@ func main() {
 	// add data for all log events if mixed aggregation
 	report.Global(report.Data{"service": "myAppName"})
 
+	// report runtime stats evry 10s
+	report.RuntimeStatsEvery(time.Second * 10)
+
 	http.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
 		// timer to record response time and details
 		defer report.Tock(report.Tick(), "http.response", report.Data{
@@ -39,5 +42,5 @@ func main() {
 	}()
 
 	// to demo drain exist after 30 seconds
-	<-time.After(time.Second * 30)
+	<-time.After(time.Second * 60)
 }
