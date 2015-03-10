@@ -49,7 +49,7 @@ func batchPoster(url string) {
 			go func(data string) {
 				defer wg.Done()
 
-				req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(buffer)))
+				req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(data)))
 				if err != nil {
 					log.Println("error:> ", err)
 					return
