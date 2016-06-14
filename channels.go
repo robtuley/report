@@ -8,6 +8,9 @@ import (
 // Data is a string-keyed map of unstructured data relevant to the event
 type Data map[string]interface{}
 
+// Observer allows custom functional interception of the log stream
+type Observer func(Data)
+
 //     info.go, action.go, timer.go
 // --> channel.RawEvents
 // --> global.go <-- channel.AddGlobal
@@ -20,6 +23,7 @@ var channel struct {
 	RawEvents   chan Data
 	WithGlobals chan Data
 	AddGlobal   chan Data
+	AddObserver chan Observer
 	JsonEncoded chan string
 	DrainSignal chan bool
 	IsDraining  chan bool
@@ -29,6 +33,7 @@ func init() {
 	channel.RawEvents = make(chan Data, 50)
 	channel.WithGlobals = make(chan Data, 50)
 	channel.AddGlobal = make(chan Data)
+	channel.AddObserver = make(chan Observer)
 	channel.JsonEncoded = make(chan string, 50)
 	channel.DrainSignal = make(chan bool)
 	channel.IsDraining = make(chan bool)
