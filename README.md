@@ -10,7 +10,7 @@ An opinonated telemetry & logging utility for Go.
 [![Issue Count](https://codeclimate.com/github/robtuley/report/badges/issue_count.svg)](https://codeclimate.com/github/robtuley/report)
 
 + one global logging stream per application
-+ formatted as a stream of mostly unstructured JSON data events 
++ format as unstructured JSON data events 
 + transport to an aggregator (e.g. Loggly)
 
 Log Events
@@ -25,7 +25,7 @@ Log is a stream of data events that fall into 3 categories:
 Usage
 -----
 
-See `example/helloworld.go`:
+See `example/webserver/helloworld.go`:
 
     func main() {
     	defer report.Drain()		
