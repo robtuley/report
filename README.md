@@ -5,6 +5,10 @@ An opinonated telemetry & logging utility for Go.
 
 [![GoDoc](https://godoc.org/github.com/robtuley/report?status.png)](https://godoc.org/github.com/robtuley/report)
 
+[![Code Climate](https://codeclimate.com/github/robtuley/report/badges/gpa.svg)](https://codeclimate.com/github/robtuley/report)
+
+[![Issue Count](https://codeclimate.com/github/robtuley/report/badges/issue_count.svg)](https://codeclimate.com/github/robtuley/report)
+
 + one global logging stream per application
 + formatted as a stream of mostly unstructured JSON data events 
 + transport to an aggregator (e.g. Loggly)
