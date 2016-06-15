@@ -38,7 +38,7 @@ func main() {
 	report.Global(report.Data{"service": "myAppName"})
 	
 	http.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
-		// timer to record response time and details
+	// timer to record response time and details
 	defer report.Tock(report.Tick(), "http.response", report.Data{
 			"host": req.URL.Host,
 			"path": req.URL.Path,
