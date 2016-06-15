@@ -1,4 +1,3 @@
-// Telemetry & logging utility to record unstructured data events for aggregation
 package report
 
 import (
@@ -17,14 +16,14 @@ type Observer func(Data)
 //               --> channel.Drain
 // --> channel.WithGlobals
 // --> json.go --> channel.Drain
-// --> channel.JsonEncoded
+// --> channel.JSONEncoded
 // --> broadcast.go --> channel.Drain
 var channel struct {
 	RawEvents   chan Data
 	WithGlobals chan Data
 	AddGlobal   chan Data
 	AddObserver chan Observer
-	JsonEncoded chan string
+	JSONEncoded chan string
 	DrainSignal chan bool
 	IsDraining  chan bool
 }
@@ -34,7 +33,7 @@ func init() {
 	channel.WithGlobals = make(chan Data, 50)
 	channel.AddGlobal = make(chan Data)
 	channel.AddObserver = make(chan Observer)
-	channel.JsonEncoded = make(chan string, 50)
+	channel.JSONEncoded = make(chan string, 50)
 	channel.DrainSignal = make(chan bool)
 	channel.IsDraining = make(chan bool)
 }
@@ -55,7 +54,7 @@ func Drain() {
 	close(channel.WithGlobals)
 	<-channel.DrainSignal
 
-	close(channel.JsonEncoded)
+	close(channel.JSONEncoded)
 	<-channel.DrainSignal
 }
 
