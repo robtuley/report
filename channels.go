@@ -46,6 +46,11 @@ func init() {
 //		// ... snip ...
 //	}
 func Drain() {
+	select {
+	case <-channel.IsDraining:
+		return
+	default:
+	}
 	close(channel.IsDraining)
 
 	close(channel.RawEvents)
