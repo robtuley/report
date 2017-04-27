@@ -11,6 +11,8 @@ import (
 func main() {
 	// add data for all log events if mixed aggregation
 	log := report.New(report.Data{"service": "myAppName"})
+	defer log.Stop()
+	log.RuntimeStatEvery("runtime", time.Second*10)
 
 	http.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
 		// timer to record response time and details

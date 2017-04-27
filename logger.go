@@ -9,6 +9,7 @@ import (
 // Logger is the central logging agent on which to register events
 type Logger struct {
 	taskC  chan task
+	stopC  chan bool
 	global Data
 	count  map[string]int
 }
@@ -36,6 +37,7 @@ type task struct {
 func New(global Data) *Logger {
 	logger := Logger{
 		taskC:  make(chan task, 5),
+		stopC:  make(chan bool),
 		global: global,
 		count:  make(map[string]int),
 	}
@@ -108,6 +110,29 @@ func (l *Logger) Count(event string) int {
 	}
 
 	return <-ack
+}
+
+// RuntimeStatEvery emits a runtime stat at the specified interval.
+func (l *Logger) RuntimeStatEvery(event string, duration time.Duration) {
+	go func() {
+		ticker := time.NewTicker(duration)
+		defer ticker.Stop()
+
+	statLoop:
+		for {
+			select {
+			case <-ticker.C:
+				l.Info(event, runtimeData())
+			case <-l.stopC:
+				break statLoop
+			}
+		}
+	}()
+}
+
+func (l *Logger) Stop() {
+	close(l.taskC)
+	close(l.stopC)
 }
 
 func (l *Logger) run() {

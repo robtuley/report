@@ -10,6 +10,8 @@ import (
 func main() {
 	// setup logging output
 	log := report.New(report.Data{"service": "ticker"})
+	defer log.Stop()
+	log.RuntimeStatEvery("runtime", time.Second*10)
 
 	// ticker daemon execution
 	ticker := time.NewTicker(time.Second)
