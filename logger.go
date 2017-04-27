@@ -114,9 +114,21 @@ func (l *Logger) run() {
 toNewTask:
 	for t := range l.taskC {
 		if t.command == count {
-			t.ackC <- 0
+			n, exists := l.count[t.event]
+			if exists {
+				t.ackC <- n
+			} else {
+				t.ackC <- 0
+			}
 			close(t.ackC)
 			continue toNewTask
+		}
+
+		n, exists := l.count[t.event]
+		if exists {
+			l.count[t.event] = n + 1
+		} else {
+			l.count[t.event] = 1
 		}
 
 		t.data["event"] = t.event
