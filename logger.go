@@ -34,6 +34,10 @@ type task struct {
 }
 
 // New creates an instance of a logging agent
+//
+//     logger := report.New(report.Data{"service": "myAppName"})
+//     defer logger.Stop()
+//
 func New(global Data) *Logger {
 	logger := Logger{
 		taskC:  make(chan task, 5),
@@ -47,7 +51,12 @@ func New(global Data) *Logger {
 
 // Info logs event that will provide context to any events requiring action.
 //
-//     report.Info("http.request", report.Data{"path":req.URL.Path, "ua":req.UserAgent()})
+//     logger := report.New(report.Data{"service": "myAppName"})
+//     logger.Info("http.request", report.Data{"path":req.URL.Path, "ua":req.UserAgent()})
+//
+// If you would like to block based on the logline being processed, consume from the returned ack channel:
+//
+//     <-logger.Info("http.request", report.Data{"path":req.URL.Path, "ua":req.UserAgent()})
 //
 func (l *Logger) Info(event string, payload Data) <-chan int {
 	ack := make(chan int)
@@ -62,7 +71,12 @@ func (l *Logger) Info(event string, payload Data) <-chan int {
 
 // Action logs events that need intervention or resolving.
 //
-//     report.Action("http.unavailable", report.Data{"path":req.URL.Path, "error":err.Error()})
+//     logger.Action("http.unavailable", report.Data{"path":req.URL.Path, "error":err.Error()})
+//
+// If you would like to block based on the logline being processed (for example before exiting),
+// consume from the returned ack channel:
+//
+//     <-logger.Action("http.unavailable", report.Data{"path":req.URL.Path, "error":err.Error()})
 //
 func (l *Logger) Action(event string, payload Data) <-chan int {
 	ack := make(chan int)
@@ -83,7 +97,7 @@ func (l *Logger) Tick() time.Time {
 
 // Tock reports timer telemetry data recording the time since the Tick.
 //
-//     defer report.Tock(report.Tick(), "mongo.query", report.Data{"q":query})
+//     defer logger.Tock(report.Tick(), "mongo.query", report.Data{"q":query})
 //
 func (l *Logger) Tock(start time.Time, event string, payload Data) <-chan int {
 	payload["ms"] = float64(time.Now().Sub(start).Nanoseconds()) / (float64(time.Millisecond) / float64(time.Nanosecond))
@@ -99,7 +113,13 @@ func (l *Logger) Tock(start time.Time, event string, payload Data) <-chan int {
 	return ack
 }
 
-// Count returns the number of log events of a particular type since last stats log.
+// Count returns the number of log events of a particular type since startup
+//
+//     logger := report.New(report.Data{"service": "myAppName"})
+//     logger.Info("http.request", report.Data{})
+//     logger.Info("http.request", report.Data{})
+//     count := logger.Count("http.request")
+//
 func (l *Logger) Count(event string) int {
 	ack := make(chan int)
 	l.taskC <- task{
@@ -112,7 +132,11 @@ func (l *Logger) Count(event string) int {
 	return <-ack
 }
 
-// RuntimeStatEvery emits a runtime stat at the specified interval.
+// RuntimeStatEvery log runtime stats at the specified interval
+//
+//     logger := report.New(report.Data{"service": "myAppName"})
+//     logger.RuntimeStatEvery("runtime", time.Second*10)
+//
 func (l *Logger) RuntimeStatEvery(event string, duration time.Duration) {
 	go func() {
 		ticker := time.NewTicker(duration)
@@ -130,6 +154,11 @@ func (l *Logger) RuntimeStatEvery(event string, duration time.Duration) {
 	}()
 }
 
+// Stop shuts down the logging agent, further logging will result in a panic
+//
+//     logger := report.New(report.Data{"service": "myAppName"})
+//     defer logger.Stop()
+//
 func (l *Logger) Stop() {
 	close(l.taskC)
 	close(l.stopC)
