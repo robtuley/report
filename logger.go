@@ -9,7 +9,7 @@ import (
 // Logger is the central logging agent on which to register events
 type Logger struct {
 	taskC  chan task
-	stopC  chan bool
+	stopC  chan struct{}
 	global Data
 	count  map[string]int
 }
@@ -40,8 +40,8 @@ type task struct {
 //
 func New(global Data) *Logger {
 	logger := Logger{
-		taskC:  make(chan task, 5),
-		stopC:  make(chan bool),
+		taskC:  make(chan task, 1),
+		stopC:  make(chan struct{}),
 		global: global,
 		count:  make(map[string]int),
 	}
