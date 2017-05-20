@@ -2,14 +2,15 @@
 package main
 
 import (
-	"github.com/rainchasers/report"
 	"os"
 	"time"
+
+	"github.com/rainchasers/report"
 )
 
 func main() {
 	// setup logging output
-	log := report.New(report.Data{"service": "ticker"})
+	log := report.New(os.Stdout, report.Data{"service": "ticker"})
 	defer log.Stop()
 	log.RuntimeStatEvery("runtime", time.Second*10)
 

@@ -2,15 +2,17 @@
 package main
 
 import (
-	"github.com/rainchasers/report"
 	"io"
 	"net/http"
+	"os"
 	"time"
+
+	"github.com/rainchasers/report"
 )
 
 func main() {
 	// add data for all log events if mixed aggregation
-	log := report.New(report.Data{"service": "myAppName"})
+	log := report.New(os.Stdout, report.Data{"service": "myAppName"})
 	defer log.Stop()
 	log.RuntimeStatEvery("runtime", time.Second*10)
 
