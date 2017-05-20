@@ -53,15 +53,7 @@ func New(writer io.Writer, global Data) *Logger {
 	return &logger
 }
 
-// Info logs event that will provide context to any events requiring action.
-//
-//     log := report.New(os.Stdout, report.Data{"service": "myAppName"})
-//     log.Info("http.request", report.Data{"path":req.URL.Path, "ua":req.UserAgent()})
-//
-// If you would like to block until the logline has written, consume from the returned ack channel:
-//
-//     <-log.Info("http.request", report.Data{"path":req.URL.Path, "ua":req.UserAgent()})
-//
+// Info logs event that provide telemetry measures or context to any events requiring action.
 func (l *Logger) Info(event string, payload Data) <-chan int {
 	ack := make(chan int)
 	l.taskC <- task{
@@ -73,15 +65,7 @@ func (l *Logger) Info(event string, payload Data) <-chan int {
 	return ack
 }
 
-// Action logs events that need intervention or resolving.
-//
-//     logger.Action("http.unavailable", report.Data{"path":req.URL.Path, "error":err.Error()})
-//
-// If you would like to block based on the logline being processed (for example before exiting),
-// consume from the returned ack channel:
-//
-//     <-logger.Action("http.unavailable", report.Data{"path":req.URL.Path, "error":err.Error()})
-//
+// Action events that need intervention or resolving.
 func (l *Logger) Action(event string, payload Data) <-chan int {
 	ack := make(chan int)
 	l.taskC <- task{
@@ -132,8 +116,8 @@ func (l *Logger) Count(event string) int {
 
 // RuntimeStatEvery log runtime stats at the specified interval
 //
-//     logger := report.New(os.Stdout, report.Data{"service": "myAppName"})
-//     logger.RuntimeStatEvery("runtime", time.Second*10)
+//     log := report.New(os.Stdout, report.Data{"service": "myAppName"})
+//     log.RuntimeStatEvery("runtime", time.Second*10)
 //
 func (l *Logger) RuntimeStatEvery(event string, duration time.Duration) {
 	go func() {
@@ -154,8 +138,8 @@ func (l *Logger) RuntimeStatEvery(event string, duration time.Duration) {
 
 // Stop shuts down the logging agent, further logging will result in a panic
 //
-//     logger := report.New(os.Stdout, report.Data{"service": "myAppName"})
-//     defer logger.Stop()
+//     log := report.New(os.Stdout, report.Data{"service": "myAppName"})
+//     defer log.Stop()
 //
 func (l *Logger) Stop() {
 	close(l.taskC)
