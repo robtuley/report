@@ -34,9 +34,11 @@ type task struct {
 	ackC    chan<- int
 }
 
+const msPerNs = float64(time.Millisecond) / float64(time.Nanosecond)
+
 // New creates an instance of a logging agent
 //
-//     logger := report.New(os.Stdout, report.Data{"service": "myAppName"})
+//     log := report.New(os.Stdout, report.Data{"service": "myAppName"})
 //     defer logger.Stop()
 //
 func New(writer io.Writer, global Data) *Logger {
@@ -53,12 +55,12 @@ func New(writer io.Writer, global Data) *Logger {
 
 // Info logs event that will provide context to any events requiring action.
 //
-//     logger := report.New(os.Stdout, report.Data{"service": "myAppName"})
-//     logger.Info("http.request", report.Data{"path":req.URL.Path, "ua":req.UserAgent()})
+//     log := report.New(os.Stdout, report.Data{"service": "myAppName"})
+//     log.Info("http.request", report.Data{"path":req.URL.Path, "ua":req.UserAgent()})
 //
-// If you would like to block based on the logline being processed, consume from the returned ack channel:
+// If you would like to block until the logline has written, consume from the returned ack channel:
 //
-//     <-logger.Info("http.request", report.Data{"path":req.URL.Path, "ua":req.UserAgent()})
+//     <-log.Info("http.request", report.Data{"path":req.URL.Path, "ua":req.UserAgent()})
 //
 func (l *Logger) Info(event string, payload Data) <-chan int {
 	ack := make(chan int)
@@ -102,7 +104,7 @@ func (l *Logger) Tick() time.Time {
 //     defer logger.Tock(report.Tick(), "mongo.query", report.Data{"q":query})
 //
 func (l *Logger) Tock(start time.Time, event string, payload Data) <-chan int {
-	payload["ms"] = float64(time.Now().Sub(start).Nanoseconds()) / (float64(time.Millisecond) / float64(time.Nanosecond))
+	payload["ms"] = float64(time.Now().Sub(start).Nanoseconds()) / msPerNs
 
 	ack := make(chan int)
 	l.taskC <- task{
@@ -116,12 +118,6 @@ func (l *Logger) Tock(start time.Time, event string, payload Data) <-chan int {
 }
 
 // Count returns the number of log events of a particular type since startup
-//
-//     logger := report.New(os.Stdout, report.Data{"service": "myAppName"})
-//     logger.Info("http.request", report.Data{})
-//     logger.Info("http.request", report.Data{})
-//     count := logger.Count("http.request")
-//
 func (l *Logger) Count(event string) int {
 	ack := make(chan int)
 	l.taskC <- task{
