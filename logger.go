@@ -2,12 +2,13 @@ package report
 
 import (
 	"encoding/json"
-	"os"
+	"io"
 	"time"
 )
 
 // Logger is the central logging agent on which to register events
 type Logger struct {
+	writer io.Writer
 	taskC  chan task
 	stopC  chan struct{}
 	global Data
@@ -35,11 +36,12 @@ type task struct {
 
 // New creates an instance of a logging agent
 //
-//     logger := report.New(report.Data{"service": "myAppName"})
+//     logger := report.New(io.StdOut, report.Data{"service": "myAppName"})
 //     defer logger.Stop()
 //
-func New(global Data) *Logger {
+func New(writer io.Writer, global Data) *Logger {
 	logger := Logger{
+		writer: writer,
 		taskC:  make(chan task, 1),
 		stopC:  make(chan struct{}),
 		global: global,
@@ -51,7 +53,7 @@ func New(global Data) *Logger {
 
 // Info logs event that will provide context to any events requiring action.
 //
-//     logger := report.New(report.Data{"service": "myAppName"})
+//     logger := report.New(io.StdOut, report.Data{"service": "myAppName"})
 //     logger.Info("http.request", report.Data{"path":req.URL.Path, "ua":req.UserAgent()})
 //
 // If you would like to block based on the logline being processed, consume from the returned ack channel:
@@ -115,7 +117,7 @@ func (l *Logger) Tock(start time.Time, event string, payload Data) <-chan int {
 
 // Count returns the number of log events of a particular type since startup
 //
-//     logger := report.New(report.Data{"service": "myAppName"})
+//     logger := report.New(io.StdOut, report.Data{"service": "myAppName"})
 //     logger.Info("http.request", report.Data{})
 //     logger.Info("http.request", report.Data{})
 //     count := logger.Count("http.request")
@@ -134,7 +136,7 @@ func (l *Logger) Count(event string) int {
 
 // RuntimeStatEvery log runtime stats at the specified interval
 //
-//     logger := report.New(report.Data{"service": "myAppName"})
+//     logger := report.New(io.StdOut, report.Data{"service": "myAppName"})
 //     logger.RuntimeStatEvery("runtime", time.Second*10)
 //
 func (l *Logger) RuntimeStatEvery(event string, duration time.Duration) {
@@ -156,7 +158,7 @@ func (l *Logger) RuntimeStatEvery(event string, duration time.Duration) {
 
 // Stop shuts down the logging agent, further logging will result in a panic
 //
-//     logger := report.New(report.Data{"service": "myAppName"})
+//     logger := report.New(io.StdOut, report.Data{"service": "myAppName"})
 //     defer logger.Stop()
 //
 func (l *Logger) Stop() {
@@ -165,6 +167,8 @@ func (l *Logger) Stop() {
 }
 
 func (l *Logger) run() {
+	encoder := json.NewEncoder(l.writer)
+
 toNewTask:
 	for t := range l.taskC {
 		if t.command == count {
@@ -199,17 +203,7 @@ toNewTask:
 			t.data["type"] = "timer"
 		}
 
-		os.Stdout.Write(map2Json(t.data))
-		os.Stdout.Write([]byte("\n"))
-
+		encoder.Encode(t.data)
 		close(t.ackC)
 	}
-}
-
-func map2Json(d Data) []byte {
-	json, err := json.Marshal(d)
-	if err != nil {
-		return []byte(err.Error())
-	}
-	return json
 }
