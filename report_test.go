@@ -1,11 +1,10 @@
 package report_test
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
-
-	"errors"
 
 	"github.com/rainchasers/report"
 )
@@ -31,6 +30,10 @@ func Example() {
 	if log.Count("example.tick") != 3 {
 		// your own log validation...
 		fmt.Print("Ooops! example.tick should be 3")
+	}
+	if err := log.LastError(); err != nil {
+		// your own log validation...
+		fmt.Print(err)
 	}
 
 	// Output:
@@ -74,9 +77,15 @@ func ExampleLogger_Action() {
 	// (useful if you intend to shutdown as a result of this error)
 	<-log.Action("json.unparseable", report.Data{"error": err.Error()})
 
+	// LastError can be used to validate if an actionable event was logged
+	if err := log.LastError(); err != nil {
+		fmt.Println(err.Error())
+	}
+
 	// Output:
 	// {"error":"Failed to parse JSON","event":"json.unparseable","timestamp":"2017-05-20T21:00:24.2+01:00","type":"action"}
 	// {"error":"Failed to parse JSON","event":"json.unparseable","timestamp":"2017-05-20T21:00:24.2+01:00","type":"action"}
+	// Actionable event: json.unparseable
 }
 
 func ExampleLogger_Count() {
@@ -92,4 +101,19 @@ func ExampleLogger_Count() {
 
 	// Output:
 	// 404 response count is 1
+}
+
+func ExampleLogger_LastError() {
+	log := report.New(ioutil.Discard, report.Data{})
+	defer log.Stop()
+
+	value := make(chan int)
+	<-log.Info("encoding.fail", report.Data{"invalid": value})
+
+	if err := log.LastError(); err != nil {
+		fmt.Println("chan cannot be JSON encoded")
+	}
+
+	// Output:
+	// chan cannot be JSON encoded
 }

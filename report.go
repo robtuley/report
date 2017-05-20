@@ -2,17 +2,21 @@ package report
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
+	"sync"
 	"time"
 )
 
 // Logger is the central logging agent on which to register events
 type Logger struct {
-	writer io.Writer
-	taskC  chan task
-	stopC  chan struct{}
-	global Data
-	count  map[string]int
+	writer         io.Writer
+	taskC          chan task
+	stopC          chan struct{}
+	global         Data
+	count          map[string]int
+	lastError      error
+	lastErrorMutex sync.Mutex
 }
 
 // Data is a string-keyed map of unstructured data relevant to the event
@@ -136,6 +140,14 @@ func (l *Logger) RuntimeStatEvery(event string, duration time.Duration) {
 	}()
 }
 
+// LastError returns the last Actionable log event or encoding error if either occurred
+func (l *Logger) LastError() error {
+	l.lastErrorMutex.Lock()
+	defer l.lastErrorMutex.Unlock()
+
+	return l.lastError
+}
+
 // Stop shuts down the logging agent, further logging will result in a panic
 //
 //     log := report.New(os.Stdout, report.Data{"service": "myAppName"})
@@ -179,11 +191,18 @@ toNewTask:
 			t.data["type"] = "info"
 		case action:
 			t.data["type"] = "action"
+			l.lastErrorMutex.Lock()
+			l.lastError = errors.New("Actionable event: " + t.event)
+			l.lastErrorMutex.Unlock()
 		case tock:
 			t.data["type"] = "timer"
 		}
 
-		encoder.Encode(t.data)
+		if err := encoder.Encode(t.data); err != nil {
+			l.lastErrorMutex.Lock()
+			l.lastError = err
+			l.lastErrorMutex.Unlock()
+		}
 		close(t.ackC)
 	}
 }
