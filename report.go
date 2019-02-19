@@ -3,14 +3,14 @@ package report
 import (
 	"encoding/json"
 	"errors"
-	"io"
+	"os"
 	"sync"
 	"time"
 )
 
 // Logger is the central logging agent on which to register events
 type Logger struct {
-	writer         io.Writer
+	writer         func(d Data) error
 	taskC          chan task
 	stopC          chan struct{}
 	global         Data
@@ -21,6 +21,9 @@ type Logger struct {
 
 // Data is a string-keyed map of unstructured data relevant to the event
 type Data map[string]interface{}
+
+// Writer is a event writing function
+type Writer func(d Data) error
 
 type command int
 
@@ -42,12 +45,12 @@ const msPerNs = float64(time.Millisecond) / float64(time.Nanosecond)
 
 // New creates an instance of a logging agent
 //
-//     log := report.New(os.Stdout, report.Data{"service": "myAppName"})
+//     logger := report.New(report.JSON(), report.Data{"service": "myAppName"})
 //     defer logger.Stop()
 //
-func New(writer io.Writer, global Data) *Logger {
+func New(w Writer, global Data) *Logger {
 	logger := Logger{
-		writer: writer,
+		writer: w,
 		taskC:  make(chan task, 1),
 		stopC:  make(chan struct{}),
 		global: global,
@@ -55,6 +58,14 @@ func New(writer io.Writer, global Data) *Logger {
 	}
 	go logger.run()
 	return &logger
+}
+
+// JSON is a stdout JSON encoded log writer
+func JSON() Writer {
+	encoder := json.NewEncoder(os.Stdout)
+	return func(d Data) error {
+		return encoder.Encode(d)
+	}
 }
 
 // Info logs event that provide telemetry measures or context to any events requiring action.
@@ -120,7 +131,7 @@ func (l *Logger) Count(event string) int {
 
 // RuntimeStatEvery log runtime stats at the specified interval
 //
-//     log := report.New(os.Stdout, report.Data{"service": "myAppName"})
+//     log := report.New(report.JSON(), report.Data{"service": "myAppName"})
 //     log.RuntimeStatEvery("runtime", time.Second*10)
 //
 func (l *Logger) RuntimeStatEvery(event string, duration time.Duration) {
@@ -150,7 +161,7 @@ func (l *Logger) LastError() error {
 
 // Stop shuts down the logging agent, further logging will result in a panic
 //
-//     log := report.New(os.Stdout, report.Data{"service": "myAppName"})
+//     log := report.New(report.JSON(), report.Data{"service": "myAppName"})
 //     defer log.Stop()
 //
 func (l *Logger) Stop() {
@@ -159,7 +170,6 @@ func (l *Logger) Stop() {
 }
 
 func (l *Logger) run() {
-	encoder := json.NewEncoder(l.writer)
 
 toNewTask:
 	for t := range l.taskC {
@@ -198,7 +208,7 @@ toNewTask:
 			t.data["type"] = "timer"
 		}
 
-		if err := encoder.Encode(t.data); err != nil {
+		if err := l.writer(t.data); err != nil {
 			l.lastErrorMutex.Lock()
 			l.lastError = err
 			l.lastErrorMutex.Unlock()

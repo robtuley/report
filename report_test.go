@@ -3,15 +3,13 @@ package report_test
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"os"
 
 	"github.com/rainchasers/report"
 )
 
 func Example() {
 	// setup logging output
-	log := report.New(os.Stdout, report.Data{
+	log := report.New(report.JSON(), report.Data{
 		"service":   "example",
 		"timestamp": "2017-05-20T21:00:24.2+01:00", // to make output deterministic
 	})
@@ -46,7 +44,7 @@ func Example() {
 
 func ExampleLogger_Info() {
 	// setup logging output, NOTE timestamp included only to make output deterministic
-	log := report.New(os.Stdout, report.Data{"timestamp": "2017-05-20T21:00:24.2+01:00"})
+	log := report.New(report.JSON(), report.Data{"timestamp": "2017-05-20T21:00:24.2+01:00"})
 	defer log.Stop()
 
 	// normal usage is simple to call log.Info
@@ -64,7 +62,7 @@ func ExampleLogger_Info() {
 
 func ExampleLogger_Action() {
 	// setup logging output, NOTE timestamp included only to make output deterministic
-	log := report.New(os.Stdout, report.Data{"timestamp": "2017-05-20T21:00:24.2+01:00"})
+	log := report.New(report.JSON(), report.Data{"timestamp": "2017-05-20T21:00:24.2+01:00"})
 	defer log.Stop()
 
 	// for example we get an error...
@@ -89,8 +87,11 @@ func ExampleLogger_Action() {
 }
 
 func ExampleLogger_Count() {
-	// setup logging output
-	log := report.New(ioutil.Discard, report.Data{})
+	discard := func(d report.Data) error {
+		return nil
+	}
+
+	log := report.New(discard, report.Data{})
 	defer log.Stop()
 
 	log.Info("http.response.200", report.Data{})
@@ -104,16 +105,19 @@ func ExampleLogger_Count() {
 }
 
 func ExampleLogger_LastError() {
-	log := report.New(ioutil.Discard, report.Data{})
+	writeError := func(d report.Data) error {
+		return errors.New("a send error")
+	}
+
+	log := report.New(writeError, report.Data{})
 	defer log.Stop()
 
-	value := make(chan int)
-	<-log.Info("encoding.fail", report.Data{"invalid": value})
+	<-log.Info("encoding.fail", report.Data{})
 
 	if err := log.LastError(); err != nil {
-		fmt.Println("chan cannot be JSON encoded")
+		fmt.Println(err.Error())
 	}
 
 	// Output:
-	// chan cannot be JSON encoded
+	// a send error
 }
