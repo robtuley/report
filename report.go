@@ -6,6 +6,8 @@ import (
 	"os"
 	"sync"
 	"time"
+
+	"github.com/honeycombio/libhoney-go"
 )
 
 // Logger is the central logging agent on which to register events
@@ -65,6 +67,20 @@ func JSON() Writer {
 	encoder := json.NewEncoder(os.Stdout)
 	return func(d Data) error {
 		return encoder.Encode(d)
+	}
+}
+
+// Honeycomb sends log events to
+func Honeycomb(key string, dataset string) Writer {
+	libhoney.Init(libhoney.Config{
+		WriteKey: key,
+		Dataset:  dataset,
+	})
+
+	return func(d Data) error {
+		ev := libhoney.NewEvent()
+		ev.Add(d)
+		return ev.Send()
 	}
 }
 
@@ -167,6 +183,10 @@ func (l *Logger) LastError() error {
 func (l *Logger) Stop() {
 	close(l.taskC)
 	close(l.stopC)
+	// we should call libhoney.Close() here but if not Inited this
+	// causes a panic. So we call Flush() to ensure any pending events
+	// have been sent.
+	libhoney.Flush()
 }
 
 func (l *Logger) run() {
