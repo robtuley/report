@@ -1,6 +1,7 @@
 package report_test
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 
@@ -9,7 +10,7 @@ import (
 
 func Example() {
 	// setup logging output
-	log := report.New(report.JSON(), report.Data{
+	log := report.New(report.StdOutJSON(), report.Data{
 		"service":   "example",
 		"timestamp": "2017-05-20T21:00:24.2+01:00", // to make output deterministic
 	})
@@ -44,7 +45,7 @@ func Example() {
 
 func ExampleLogger_Info() {
 	// setup logging output, NOTE timestamp included only to make output deterministic
-	log := report.New(report.JSON(), report.Data{"timestamp": "2017-05-20T21:00:24.2+01:00"})
+	log := report.New(report.StdOutJSON(), report.Data{"timestamp": "2017-05-20T21:00:24.2+01:00"})
 	defer log.Stop()
 
 	// normal usage is simple to call log.Info
@@ -62,7 +63,7 @@ func ExampleLogger_Info() {
 
 func ExampleLogger_Action() {
 	// setup logging output, NOTE timestamp included only to make output deterministic
-	log := report.New(report.JSON(), report.Data{"timestamp": "2017-05-20T21:00:24.2+01:00"})
+	log := report.New(report.StdOutJSON(), report.Data{"timestamp": "2017-05-20T21:00:24.2+01:00"})
 	defer log.Stop()
 
 	// for example we get an error...
@@ -105,6 +106,7 @@ func ExampleLogger_Count() {
 }
 
 func ExampleLogger_LastError() {
+	// this is a writer that will report an error
 	writeError := func(d report.Data) error {
 		return errors.New("a send error")
 	}
@@ -112,12 +114,41 @@ func ExampleLogger_LastError() {
 	log := report.New(writeError, report.Data{})
 	defer log.Stop()
 
+	// this log line has errored, but to prevent error handling clutter
+	// the library interface requires you need to check error states
+	// separately using Logger.LastError()
 	<-log.Info("encoding.fail", report.Data{})
 
+	// check whether there has been any logging errors
 	if err := log.LastError(); err != nil {
 		fmt.Println(err.Error())
 	}
 
 	// Output:
 	// a send error
+}
+
+func ExampleWriter_And() {
+	// want to write to 2 logfiles, represented here as 2 buffers
+	b1 := &bytes.Buffer{}
+	b2 := &bytes.Buffer{}
+
+	// use Writer.And to create a single writer from 2 writers
+	w := report.JSON(b1).And(report.JSON(b2))
+
+	// setup logging output, NOTE timestamp included only to make output deterministic
+	log := report.New(w, report.Data{"timestamp": "2017-05-20T21:00:24.2+01:00"})
+	defer log.Stop()
+
+	// log something
+	<-log.Info("http.response", report.Data{"status": 404, "request": "/nopage"})
+
+	// output the 2 log files, note these have been written in parallel which
+	// is why they are kept separate in this example until the end
+	fmt.Print(b1)
+	fmt.Print(b2)
+
+	// Output:
+	// {"event":"http.response","request":"/nopage","status":404,"timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
+	// {"event":"http.response","request":"/nopage","status":404,"timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
 }
