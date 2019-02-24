@@ -4,13 +4,11 @@ import (
 	"errors"
 	"sync"
 	"time"
-
-	"github.com/honeycombio/libhoney-go"
 )
 
 // Logger is the central logging agent on which to register events
 type Logger struct {
-	writer         func(d Data) error
+	exporters      []Exporter
 	taskC          chan task
 	stopC          chan struct{}
 	global         Data
@@ -43,9 +41,8 @@ type task struct {
 //     logger := report.New(report.JSON(), report.Data{"service": "myAppName"})
 //     defer logger.Stop()
 //
-func New(w Writer, global Data) *Logger {
+func New(global Data) *Logger {
 	logger := Logger{
-		writer: w,
 		taskC:  make(chan task, 1),
 		stopC:  make(chan struct{}),
 		global: global,
@@ -53,6 +50,11 @@ func New(w Writer, global Data) *Logger {
 	}
 	go logger.run()
 	return &logger
+}
+
+// Export configures an external service to receive log events
+func (l *Logger) Export(e Exporter) {
+	l.exporters = append(l.exporters, e)
 }
 
 // Info logs event that provide telemetry measures or context to any events requiring action.
@@ -101,18 +103,28 @@ func (l *Logger) LastError() error {
 	return l.lastError
 }
 
-// Stop shuts down the logging agent, further logging will result in a panic
+// Send exports a raw data event to configured external services
+func (l *Logger) Send(d Data) error {
+	var err error
+	for _, e := range l.exporters {
+		if err == nil {
+			err = e.Send(d)
+		}
+	}
+	return err
+}
+
+// Close shuts down the logging agent, further logging will result in a panic
 //
 //     log := report.New(report.JSON(), report.Data{"service": "myAppName"})
-//     defer log.Stop()
+//     defer log.Close()
 //
-func (l *Logger) Stop() {
+func (l *Logger) Close() {
 	close(l.taskC)
 	close(l.stopC)
-	// we should call libhoney.Close() here but if not Inited this
-	// causes a panic. So we call Flush() to ensure any pending events
-	// have been sent.
-	libhoney.Flush()
+	for _, e := range l.exporters {
+		e.Close()
+	}
 }
 
 func (l *Logger) run() {
@@ -156,7 +168,7 @@ toNewTask:
 			t.data["type"] = "span"
 		}
 
-		if err := l.writer(t.data); err != nil {
+		if err := l.Send(t.data); err != nil {
 			l.lastErrorMutex.Lock()
 			l.lastError = err
 			l.lastErrorMutex.Unlock()

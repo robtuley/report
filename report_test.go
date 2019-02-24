@@ -10,11 +10,12 @@ import (
 
 func Example() {
 	// setup logging output
-	log := report.New(report.StdOutJSON(), report.Data{
+	log := report.New(report.Data{
 		"service":   "example",
 		"timestamp": "2017-05-20T21:00:24.2+01:00", // to make output deterministic
 	})
-	defer log.Stop()
+	log.Export(report.StdOutJSON())
+	defer log.Close()
 
 	// ticker daemon execution
 	log.Info("example.start", report.Data{})
@@ -45,8 +46,9 @@ func Example() {
 
 func ExampleLogger_Info() {
 	// setup logging output, NOTE timestamp included only to make output deterministic
-	log := report.New(report.StdOutJSON(), report.Data{"timestamp": "2017-05-20T21:00:24.2+01:00"})
-	defer log.Stop()
+	log := report.New(report.Data{"timestamp": "2017-05-20T21:00:24.2+01:00"})
+	log.Export(report.StdOutJSON())
+	defer log.Close()
 
 	// normal usage is simple to call log.Info
 	log.Info("http.response", report.Data{"status": 200, "request": "/page1"})
@@ -63,8 +65,9 @@ func ExampleLogger_Info() {
 
 func ExampleLogger_Action() {
 	// setup logging output, NOTE timestamp included only to make output deterministic
-	log := report.New(report.StdOutJSON(), report.Data{"timestamp": "2017-05-20T21:00:24.2+01:00"})
-	defer log.Stop()
+	log := report.New(report.Data{"timestamp": "2017-05-20T21:00:24.2+01:00"})
+	log.Export(report.StdOutJSON())
+	defer log.Close()
 
 	// for example we get an error...
 	err := errors.New("Failed to parse JSON")
@@ -88,12 +91,8 @@ func ExampleLogger_Action() {
 }
 
 func ExampleLogger_Count() {
-	discard := func(d report.Data) error {
-		return nil
-	}
-
-	log := report.New(discard, report.Data{})
-	defer log.Stop()
+	log := report.New(report.Data{})
+	defer log.Close()
 
 	log.Info("http.response.200", report.Data{})
 	log.Info("http.response.404", report.Data{})
@@ -106,18 +105,16 @@ func ExampleLogger_Count() {
 }
 
 func ExampleLogger_LastError() {
-	// this is a writer that will report an error
-	writeError := func(d report.Data) error {
-		return errors.New("a send error")
-	}
-
-	log := report.New(writeError, report.Data{})
-	defer log.Stop()
+	log := report.New(report.Data{})
+	log.Export(report.StdOutJSON())
+	defer log.Close()
 
 	// this log line has errored, but to prevent error handling clutter
 	// the library interface requires you need to check error states
 	// separately using Logger.LastError()
-	<-log.Info("encoding.fail", report.Data{})
+	<-log.Info("encoding.fail", report.Data{
+		"unencodeable": make(chan int),
+	})
 
 	// check whether there has been any logging errors
 	if err := log.LastError(); err != nil {
@@ -125,20 +122,21 @@ func ExampleLogger_LastError() {
 	}
 
 	// Output:
-	// a send error
+	// json: unsupported type: chan int
 }
 
-func ExampleWriter_And() {
+func ExampleLogger_Export() {
 	// want to write to 2 logfiles, represented here as 2 buffers
 	b1 := &bytes.Buffer{}
 	b2 := &bytes.Buffer{}
 
-	// use Writer.And to create a single writer from 2 writers
-	w := report.JSON(b1).And(report.JSON(b2))
-
 	// setup logging output, NOTE timestamp included only to make output deterministic
-	log := report.New(w, report.Data{"timestamp": "2017-05-20T21:00:24.2+01:00"})
-	defer log.Stop()
+	log := report.New(report.Data{"timestamp": "2017-05-20T21:00:24.2+01:00"})
+	defer log.Close()
+
+	// configure 2 writers
+	log.Export(report.JSON(b1))
+	log.Export(report.JSON(b2))
 
 	// log something
 	<-log.Info("http.response", report.Data{"status": 404, "request": "/nopage"})

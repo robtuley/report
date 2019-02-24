@@ -8,50 +8,54 @@ import (
 	"github.com/honeycombio/libhoney-go"
 )
 
-// Writer is a event writing function
-type Writer func(d Data) error
-
-// And adds another writer to execute in parallel
-func (w Writer) And(next Writer) Writer {
-	return func(d Data) error {
-		ch := make(chan error)
-		go func() {
-			ch <- w(d)
-		}()
-		go func() {
-			ch <- next(d)
-		}()
-		if err := <-ch; err != nil {
-			<-ch
-			return err
-		}
-		return <-ch
-	}
+// Exporter exports events to an external service
+type Exporter interface {
+	Send(d Data) error
+	Close()
 }
 
 // JSON writes JSON formatted logs
-func JSON(w io.Writer) Writer {
-	encoder := json.NewEncoder(w)
-	return func(d Data) error {
-		return encoder.Encode(d)
+func JSON(w io.Writer) Exporter {
+	return jw{
+		encoder: json.NewEncoder(w),
 	}
 }
 
 // StdOutJSON writes logs to StdOut as JSON
-func StdOutJSON() Writer {
+func StdOutJSON() Exporter {
 	return JSON(os.Stdout)
 }
 
 // Honeycomb sends log events to HoneyComb
-func Honeycomb(key string, dataset string) Writer {
+func Honeycomb(key string, dataset string) Exporter {
 	libhoney.Init(libhoney.Config{
 		WriteKey: key,
 		Dataset:  dataset,
 	})
 
-	return func(d Data) error {
-		ev := libhoney.NewEvent()
-		ev.Add(d)
-		return ev.Send()
-	}
+	return hw{}
+}
+
+// json writer
+type jw struct {
+	encoder *json.Encoder
+}
+
+func (w jw) Send(d Data) error {
+	return w.encoder.Encode(d)
+}
+
+func (w jw) Close() {}
+
+// honeycomb writer
+type hw struct{}
+
+func (w hw) Send(d Data) error {
+	ev := libhoney.NewEvent()
+	ev.Add(d)
+	return ev.Send()
+}
+
+func (w hw) Close() {
+	libhoney.Close()
 }
