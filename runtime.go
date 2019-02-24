@@ -5,12 +5,12 @@ import (
 	"time"
 )
 
-// RuntimeStatEvery records runtime stats at the specified interval
+// RuntimeEvery records runtime stats at the specified interval
 //
 //     log := report.New(report.StdOutJSON(), report.Data{"service": "myAppName"})
-//     log.RuntimeStatEvery("runtime", time.Second*10)
+//     log.RuntimeEvery(time.Second*10)
 //
-func (l *Logger) RuntimeStatEvery(event string, duration time.Duration) {
+func (l *Logger) RuntimeEvery(duration time.Duration) {
 	go func() {
 		ticker := time.NewTicker(duration)
 		defer ticker.Stop()
@@ -19,7 +19,7 @@ func (l *Logger) RuntimeStatEvery(event string, duration time.Duration) {
 		for {
 			select {
 			case <-ticker.C:
-				l.Info(event, runtimeData())
+				l.Info("runtime", runtimeData())
 			case <-l.stopC:
 				break statLoop
 			}
@@ -28,15 +28,13 @@ func (l *Logger) RuntimeStatEvery(event string, duration time.Duration) {
 }
 
 func runtimeData() Data {
-	data := Data{}
-
 	m := &runtime.MemStats{}
 	runtime.ReadMemStats(m)
 
-	data["stack.mb"] = float64(m.StackSys) / float64(1024*1024)
-	data["heap.mb"] = float64(m.HeapAlloc) / float64(1024*1024)
-	data["goroutine.count"] = runtime.NumGoroutine()
-	data["gc.pause.ns"] = m.PauseNs[(m.NumGC+255)%256]
-
-	return data
+	return Data{
+		"runtime.stack_mb":        float64(m.StackSys) / float64(1024*1024),
+		"runtime.heap_mb":         float64(m.HeapAlloc) / float64(1024*1024),
+		"runtime.goroutine_count": runtime.NumGoroutine(),
+		"runtime.gc_pause_ms":     float64(m.PauseNs[(m.NumGC+255)%256]) / msPerNs,
+	}
 }
