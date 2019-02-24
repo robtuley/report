@@ -36,11 +36,11 @@ func Example() {
 	}
 
 	// Output:
-	// {"event":"example.start","service":"example","timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
-	// {"event":"example.tick","sequence":0,"service":"example","timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
-	// {"event":"example.tick","sequence":1,"service":"example","timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
-	// {"event":"example.tick","sequence":2,"service":"example","timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
-	// {"event":"example.stop","service":"example","timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
+	// {"name":"example.start","service":"example","timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
+	// {"name":"example.tick","sequence":0,"service":"example","timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
+	// {"name":"example.tick","sequence":1,"service":"example","timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
+	// {"name":"example.tick","sequence":2,"service":"example","timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
+	// {"name":"example.stop","service":"example","timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
 }
 
 func ExampleLogger_Info() {
@@ -56,9 +56,9 @@ func ExampleLogger_Info() {
 	<-log.Info("http.response", report.Data{"status": 404, "request": "/nopage"})
 
 	// Output:
-	// {"event":"http.response","request":"/page1","status":200,"timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
-	// {"event":"http.response","request":"/page2","status":200,"timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
-	// {"event":"http.response","request":"/nopage","status":404,"timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
+	// {"name":"http.response","request":"/page1","status":200,"timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
+	// {"name":"http.response","request":"/page2","status":200,"timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
+	// {"name":"http.response","request":"/nopage","status":404,"timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
 }
 
 func ExampleLogger_Action() {
@@ -82,8 +82,8 @@ func ExampleLogger_Action() {
 	}
 
 	// Output:
-	// {"error":"Failed to parse JSON","event":"json.unparseable","timestamp":"2017-05-20T21:00:24.2+01:00","type":"action"}
-	// {"error":"Failed to parse JSON","event":"json.unparseable","timestamp":"2017-05-20T21:00:24.2+01:00","type":"action"}
+	// {"error":"Failed to parse JSON","name":"json.unparseable","timestamp":"2017-05-20T21:00:24.2+01:00","type":"action"}
+	// {"error":"Failed to parse JSON","name":"json.unparseable","timestamp":"2017-05-20T21:00:24.2+01:00","type":"action"}
 	// Actionable event: json.unparseable
 }
 
@@ -149,6 +149,6 @@ func ExampleWriter_And() {
 	fmt.Print(b2)
 
 	// Output:
-	// {"event":"http.response","request":"/nopage","status":404,"timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
-	// {"event":"http.response","request":"/nopage","status":404,"timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
+	// {"name":"http.response","request":"/nopage","status":404,"timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
+	// {"name":"http.response","request":"/nopage","status":404,"timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
 }

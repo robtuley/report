@@ -2,7 +2,30 @@ package report
 
 import (
 	"runtime"
+	"time"
 )
+
+// RuntimeStatEvery records runtime stats at the specified interval
+//
+//     log := report.New(report.StdOutJSON(), report.Data{"service": "myAppName"})
+//     log.RuntimeStatEvery("runtime", time.Second*10)
+//
+func (l *Logger) RuntimeStatEvery(event string, duration time.Duration) {
+	go func() {
+		ticker := time.NewTicker(duration)
+		defer ticker.Stop()
+
+	statLoop:
+		for {
+			select {
+			case <-ticker.C:
+				l.Info(event, runtimeData())
+			case <-l.stopC:
+				break statLoop
+			}
+		}
+	}()
+}
 
 func runtimeData() Data {
 	data := Data{}
