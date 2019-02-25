@@ -31,7 +31,7 @@ func Example() {
 		// your own log validation...
 		fmt.Print("Ooops! example.tick should be 3")
 	}
-	if err := log.LastError(); err != nil {
+	if err := log.Err(); err != nil {
 		// your own log validation...
 		fmt.Print(err)
 	}
@@ -57,6 +57,10 @@ func ExampleLogger_Info() {
 	// if you want to block until the logline is written, consume from the returned channel
 	<-log.Info("http.response", report.Data{"status": 404, "request": "/nopage"})
 
+	if err := log.Err(); err != nil {
+		fmt.Print(err)
+	}
+
 	// Output:
 	// {"name":"http.response","request":"/page1","status":200,"timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
 	// {"name":"http.response","request":"/page2","status":200,"timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
@@ -80,7 +84,7 @@ func ExampleLogger_Action() {
 	<-log.Action("json.unparseable", report.Data{"error": err.Error()})
 
 	// LastError can be used to validate if an actionable event was logged
-	if err := log.LastError(); err != nil {
+	if err := log.Err(); err != nil {
 		fmt.Println(err.Error())
 	}
 
@@ -100,6 +104,10 @@ func ExampleLogger_Count() {
 
 	fmt.Printf("404 response count is %d", log.Count("http.response.404"))
 
+	if err := log.Err(); err != nil {
+		fmt.Print(err)
+	}
+
 	// Output:
 	// 404 response count is 1
 }
@@ -117,7 +125,7 @@ func ExampleLogger_LastError() {
 	})
 
 	// check whether there has been any logging errors
-	if err := log.LastError(); err != nil {
+	if err := log.Err(); err != nil {
 		fmt.Println(err.Error())
 	}
 
@@ -145,6 +153,10 @@ func ExampleLogger_Export() {
 	// is why they are kept separate in this example until the end
 	fmt.Print(b1)
 	fmt.Print(b2)
+
+	if err := log.Err(); err != nil {
+		fmt.Print(err)
+	}
 
 	// Output:
 	// {"name":"http.response","request":"/nopage","status":404,"timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}

@@ -8,13 +8,13 @@ import (
 
 // Logger is the central logging agent on which to register events
 type Logger struct {
-	exporters      []Exporter
-	taskC          chan task
-	stopC          chan struct{}
-	global         Data
-	count          map[string]int
-	lastError      error
-	lastErrorMutex sync.Mutex
+	exporters []Exporter
+	taskC     chan task
+	stopC     chan struct{}
+	global    Data
+	count     map[string]int
+	err       error
+	errMutex  sync.Mutex
 }
 
 // Data is a string-keyed map of unstructured data relevant to the event
@@ -95,12 +95,12 @@ func (l *Logger) Count(event string) int {
 	return <-ack
 }
 
-// LastError returns the last Actionable log event or encoding error if either occurred
-func (l *Logger) LastError() error {
-	l.lastErrorMutex.Lock()
-	defer l.lastErrorMutex.Unlock()
+// Err returns the last Actionable log event or encoding error if either occurred
+func (l *Logger) Err() error {
+	l.errMutex.Lock()
+	defer l.errMutex.Unlock()
 
-	return l.lastError
+	return l.err
 }
 
 // Send exports a raw data event to configured external services
@@ -150,6 +150,8 @@ toNewTask:
 		}
 
 		t.data["name"] = t.event
+		// timestamp is not overwritten if it already exists
+		// (e.g. endspan needs to log startspan timestamp)
 		if _, exists := t.data["timestamp"]; !exists {
 			t.data["timestamp"] = time.Now().Format(time.RFC3339Nano)
 		}
@@ -161,17 +163,17 @@ toNewTask:
 			t.data["type"] = "info"
 		case action:
 			t.data["type"] = "action"
-			l.lastErrorMutex.Lock()
-			l.lastError = errors.New("Actionable event: " + t.event)
-			l.lastErrorMutex.Unlock()
+			l.errMutex.Lock()
+			l.err = errors.New("Actionable event: " + t.event)
+			l.errMutex.Unlock()
 		case span:
 			t.data["type"] = "span"
 		}
 
 		if err := l.Send(t.data); err != nil {
-			l.lastErrorMutex.Lock()
-			l.lastError = err
-			l.lastErrorMutex.Unlock()
+			l.errMutex.Lock()
+			l.err = err
+			l.errMutex.Unlock()
 		}
 		close(t.ackC)
 	}
