@@ -11,7 +11,7 @@ type Logger struct {
 	exporters []Exporter
 	taskC     chan task
 	stopC     chan struct{}
-	global    Data
+	baggage   Data
 	count     map[string]int
 	err       error
 	errMutex  sync.Mutex
@@ -38,18 +38,26 @@ type task struct {
 
 // New creates an instance of a logging agent
 //
-//     logger := report.New(report.JSON(), report.Data{"service": "myAppName"})
+//     logger := report.New("myAppName")
+//     logger.Export(report.StdOutJSON())
 //     defer logger.Stop()
 //
-func New(global Data) *Logger {
+func New(name string) *Logger {
 	logger := Logger{
-		taskC:  make(chan task, 1),
-		stopC:  make(chan struct{}),
-		global: global,
-		count:  make(map[string]int),
+		taskC: make(chan task, 1),
+		stopC: make(chan struct{}),
+		baggage: Data{
+			"service_name": name,
+		},
+		count: make(map[string]int),
 	}
 	go logger.run()
 	return &logger
+}
+
+// Baggage adds a key value pair that is included in every logged event
+func (l *Logger) Baggage(key string, value interface{}) {
+	l.baggage[key] = value
 }
 
 // Export configures an external service to receive log events
@@ -115,10 +123,6 @@ func (l *Logger) Send(d Data) error {
 }
 
 // Close shuts down the logging agent, further logging will result in a panic
-//
-//     log := report.New(report.JSON(), report.Data{"service": "myAppName"})
-//     defer log.Close()
-//
 func (l *Logger) Close() {
 	close(l.taskC)
 	close(l.stopC)
@@ -155,7 +159,7 @@ toNewTask:
 		if _, exists := t.data["timestamp"]; !exists {
 			t.data["timestamp"] = time.Now().Format(time.RFC3339Nano)
 		}
-		for k, v := range l.global {
+		for k, v := range l.baggage {
 			t.data[k] = v
 		}
 		switch t.command {

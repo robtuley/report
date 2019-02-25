@@ -10,10 +10,8 @@ import (
 
 func Example() {
 	// setup logging output
-	log := report.New(report.Data{
-		"service":   "example",
-		"timestamp": "2017-05-20T21:00:24.2+01:00", // to make output deterministic
-	})
+	log := report.New("example")
+	log.Baggage("timestamp", "2017-05-20T21:00:24.2+01:00") // to make output deterministic
 	log.Export(report.StdOutJSON())
 	defer log.Close()
 
@@ -37,16 +35,17 @@ func Example() {
 	}
 
 	// Output:
-	// {"name":"example.start","service":"example","timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
-	// {"name":"example.tick","sequence":0,"service":"example","timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
-	// {"name":"example.tick","sequence":1,"service":"example","timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
-	// {"name":"example.tick","sequence":2,"service":"example","timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
-	// {"name":"example.stop","service":"example","timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
+	// {"name":"example.start","service_name":"example","timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
+	// {"name":"example.tick","sequence":0,"service_name":"example","timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
+	// {"name":"example.tick","sequence":1,"service_name":"example","timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
+	// {"name":"example.tick","sequence":2,"service_name":"example","timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
+	// {"name":"example.stop","service_name":"example","timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
 }
 
 func ExampleLogger_Info() {
-	// setup logging output, NOTE timestamp included only to make output deterministic
-	log := report.New(report.Data{"timestamp": "2017-05-20T21:00:24.2+01:00"})
+	// setup logging output
+	log := report.New("example")
+	log.Baggage("timestamp", "2017-05-20T21:00:24.2+01:00") // to make output deterministic
 	log.Export(report.StdOutJSON())
 	defer log.Close()
 
@@ -62,14 +61,15 @@ func ExampleLogger_Info() {
 	}
 
 	// Output:
-	// {"name":"http.response","request":"/page1","status":200,"timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
-	// {"name":"http.response","request":"/page2","status":200,"timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
-	// {"name":"http.response","request":"/nopage","status":404,"timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
+	// {"name":"http.response","request":"/page1","service_name":"example","status":200,"timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
+	// {"name":"http.response","request":"/page2","service_name":"example","status":200,"timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
+	// {"name":"http.response","request":"/nopage","service_name":"example","status":404,"timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
 }
 
 func ExampleLogger_Action() {
-	// setup logging output, NOTE timestamp included only to make output deterministic
-	log := report.New(report.Data{"timestamp": "2017-05-20T21:00:24.2+01:00"})
+	// setup logging output
+	log := report.New("example")
+	log.Baggage("timestamp", "2017-05-20T21:00:24.2+01:00") // to make output deterministic
 	log.Export(report.StdOutJSON())
 	defer log.Close()
 
@@ -89,13 +89,13 @@ func ExampleLogger_Action() {
 	}
 
 	// Output:
-	// {"error":"Failed to parse JSON","name":"json.unparseable","timestamp":"2017-05-20T21:00:24.2+01:00","type":"action"}
-	// {"error":"Failed to parse JSON","name":"json.unparseable","timestamp":"2017-05-20T21:00:24.2+01:00","type":"action"}
+	// {"error":"Failed to parse JSON","name":"json.unparseable","service_name":"example","timestamp":"2017-05-20T21:00:24.2+01:00","type":"action"}
+	// {"error":"Failed to parse JSON","name":"json.unparseable","service_name":"example","timestamp":"2017-05-20T21:00:24.2+01:00","type":"action"}
 	// Actionable event: json.unparseable
 }
 
 func ExampleLogger_Count() {
-	log := report.New(report.Data{})
+	log := report.New("example")
 	defer log.Close()
 
 	log.Info("http.response.200", report.Data{})
@@ -112,8 +112,8 @@ func ExampleLogger_Count() {
 	// 404 response count is 1
 }
 
-func ExampleLogger_LastError() {
-	log := report.New(report.Data{})
+func ExampleLogger_Err() {
+	log := report.New("example")
 	log.Export(report.StdOutJSON())
 	defer log.Close()
 
@@ -138,8 +138,9 @@ func ExampleLogger_Export() {
 	b1 := &bytes.Buffer{}
 	b2 := &bytes.Buffer{}
 
-	// setup logging output, NOTE timestamp included only to make output deterministic
-	log := report.New(report.Data{"timestamp": "2017-05-20T21:00:24.2+01:00"})
+	// setup logging output
+	log := report.New("example")
+	log.Baggage("timestamp", "2017-05-20T21:00:24.2+01:00") // to make output deterministic
 	defer log.Close()
 
 	// configure 2 writers
@@ -159,6 +160,6 @@ func ExampleLogger_Export() {
 	}
 
 	// Output:
-	// {"name":"http.response","request":"/nopage","status":404,"timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
-	// {"name":"http.response","request":"/nopage","status":404,"timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
+	// {"name":"http.response","request":"/nopage","service_name":"example","status":404,"timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
+	// {"name":"http.response","request":"/nopage","service_name":"example","status":404,"timestamp":"2017-05-20T21:00:24.2+01:00","type":"info"}
 }
