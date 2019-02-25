@@ -50,7 +50,7 @@ func (l *Logger) StartSpan(ctx context.Context, event string) context.Context {
 const msPerNs = float64(time.Millisecond) / float64(time.Nanosecond)
 
 // EndSpan writes the data from a completed trace span
-func (l *Logger) EndSpan(ctx context.Context, payload Data) <-chan int {
+func (l *Logger) EndSpan(ctx context.Context, err error, payload Data) <-chan int {
 	s := fromContext(ctx)
 
 	// check a span is open, if not simply log as error
@@ -66,9 +66,17 @@ func (l *Logger) EndSpan(ctx context.Context, payload Data) <-chan int {
 	payload["trace.trace_id"] = s.TraceID
 	payload["timestamp"] = s.Timestamp.Format(time.RFC3339Nano)
 
+	// if span has resulted in an unhandled error, flag event as actionable
+	cmd := span
+	if err != nil {
+		payload["error"] = err.Error()
+		cmd = action
+	}
+
+	// dispatch log task
 	ack := make(chan int)
 	l.taskC <- task{
-		command: span,
+		command: cmd,
 		event:   s.Name,
 		data:    payload,
 		ackC:    ack,
