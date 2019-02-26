@@ -130,7 +130,7 @@ func ExampleLogger_Err() {
 	}
 
 	// Output:
-	// json: unsupported type: chan int
+	// Error sending encoding.fail: json: unsupported type: chan int
 }
 
 func ExampleLogger_Export() {

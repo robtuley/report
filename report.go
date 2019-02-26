@@ -175,8 +175,9 @@ toNewTask:
 		}
 
 		if err := l.Send(t.data); err != nil {
+			msg := "Error sending " + t.event + ": " + err.Error()
 			l.errMutex.Lock()
-			l.err = err
+			l.err = errors.New(msg)
 			l.errMutex.Unlock()
 		}
 		close(t.ackC)
