@@ -36,12 +36,11 @@ func (l *Logger) StartSpan(ctx context.Context, event string) context.Context {
 	s.Timestamp = time.Now()
 	s.Name = event
 
-	// if no parent span, bubble up current span
-	if s.ParentID == "" {
-		s.ParentID = s.SpanID
-		if s.TraceID == "" {
-			s.TraceID = s.ParentID
-		}
+	// if no required overall trace ID, generate this
+	// but best results if there is either a root span, or
+	// an injected trace/causation reference.
+	if s.TraceID == "" {
+		s.TraceID = createULID()
 	}
 
 	return context.WithValue(ctx, contextKey, s)
