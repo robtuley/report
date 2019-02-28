@@ -19,7 +19,22 @@ const (
 	contextKey contextField = iota
 )
 
-// TODO: func to inject traceID & parentID from external input (e.g. headers or msg)
+// Trace initialises a trace within the returned context
+func (l *Logger) Trace(ctx context.Context) context.Context {
+	s := fromContext(ctx)
+	if s.TraceID == "" {
+		s.TraceID = createULID()
+	}
+	return context.WithValue(ctx, contextKey, s)
+}
+
+// ContinueTrace injects trace ID & parent span ID (causation ID) into returned context
+func (l *Logger) ContinueTrace(ctx context.Context, traceID string, causationID string) context.Context {
+	s := fromContext(ctx)
+	s.TraceID = traceID
+	s.ParentID = causationID
+	return context.WithValue(ctx, contextKey, s)
+}
 
 // StartSpan marks the start of a trace span
 func (l *Logger) StartSpan(ctx context.Context, event string) context.Context {
