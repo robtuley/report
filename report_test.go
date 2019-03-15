@@ -20,6 +20,10 @@ func TestLoggerDoesNotLeakRoutines(t *testing.T) {
 	log.Action("json.unparseable", report.Data{})
 	log.RuntimeEvery(time.Second)
 	log.Close()
+
+	// note that the Honeycomb exporter relies on a global state Init() and Close()
+	// and on testing seems to leak goroutines but is an external constraint so
+	// not included in this test
 }
 
 func Example() {

@@ -123,14 +123,28 @@ func (l *Logger) Send(d Data) error {
 	return err
 }
 
-// Close shuts down the logging agent, further logging will result in a panic
+// Close shuts down the logging agent
 func (l *Logger) Close() {
+	if l.isClosing() {
+		l.wg.Wait()
+		return
+	}
+
 	close(l.taskC)
 	close(l.stopC)
 	for _, e := range l.exporters {
 		e.Close()
 	}
 	l.wg.Wait()
+}
+
+func (l *Logger) isClosing() bool {
+	select {
+	case <-l.stopC:
+		return true
+	default:
+	}
+	return false
 }
 
 func (l *Logger) run() {
