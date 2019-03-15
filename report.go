@@ -11,6 +11,7 @@ type Logger struct {
 	exporters []Exporter
 	taskC     chan task
 	stopC     chan struct{}
+	wg        sync.WaitGroup
 	baggage   Data
 	count     map[string]int
 	err       error
@@ -129,9 +130,11 @@ func (l *Logger) Close() {
 	for _, e := range l.exporters {
 		e.Close()
 	}
+	l.wg.Wait()
 }
 
 func (l *Logger) run() {
+	l.wg.Add(1)
 
 toNewTask:
 	for t := range l.taskC {
@@ -182,4 +185,6 @@ toNewTask:
 		}
 		close(t.ackC)
 	}
+
+	l.wg.Done()
 }

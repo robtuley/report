@@ -4,9 +4,23 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"testing"
+	"time"
 
 	"github.com/rainchasers/report"
+	"go.uber.org/goleak"
 )
+
+func TestLoggerDoesNotLeakRoutines(t *testing.T) {
+	defer goleak.VerifyNoLeaks(t)
+
+	log := report.New("test")
+	log.Export(report.StdOutJSON())
+	log.Info("http.response", report.Data{"status": 200, "request": "/page1"})
+	log.Action("json.unparseable", report.Data{})
+	log.RuntimeEvery(time.Second)
+	log.Close()
+}
 
 func Example() {
 	// setup logging output

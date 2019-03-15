@@ -10,5 +10,6 @@ require (
 	github.com/honeycombio/libhoney-go v1.8.2
 	github.com/oklog/ulid v1.3.1
 	github.com/stretchr/testify v1.3.0 // indirect
+	go.uber.org/goleak v0.10.0
 	gopkg.in/alexcesaro/statsd.v2 v2.0.0 // indirect
 )

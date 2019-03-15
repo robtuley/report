@@ -11,6 +11,7 @@ import (
 //     log.RuntimeEvery(time.Second*10)
 //
 func (l *Logger) RuntimeEvery(duration time.Duration) {
+	l.wg.Add(1)
 	go func() {
 		ticker := time.NewTicker(duration)
 		defer ticker.Stop()
@@ -24,6 +25,8 @@ func (l *Logger) RuntimeEvery(duration time.Duration) {
 				break statLoop
 			}
 		}
+
+		l.wg.Done()
 	}()
 }
 
