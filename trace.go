@@ -22,9 +22,7 @@ const (
 // Trace initialises a trace within the returned context
 func (l *Logger) Trace(ctx context.Context) (traceCtx context.Context, traceID string) {
 	s := fromContext(ctx)
-	if s.TraceID == "" {
-		s.TraceID = createULID()
-	}
+	s.TraceID = createULID()
 	return context.WithValue(ctx, contextKey, s), s.TraceID
 }
 
