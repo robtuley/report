@@ -20,19 +20,18 @@ const (
 )
 
 // Trace initialises a trace within the returned context
-func (l *Logger) Trace(ctx context.Context) context.Context {
+func (l *Logger) Trace(ctx context.Context) (traceCtx context.Context, traceID string) {
 	s := fromContext(ctx)
 	if s.TraceID == "" {
 		s.TraceID = createULID()
 	}
-	return context.WithValue(ctx, contextKey, s)
+	return context.WithValue(ctx, contextKey, s), s.TraceID
 }
 
-// ContinueTrace injects trace ID & parent span ID (causation ID) into returned context
-func (l *Logger) ContinueTrace(ctx context.Context, traceID string, causationID string) context.Context {
+// ContinueTrace injects trace ID into returned context
+func (l *Logger) ContinueTrace(ctx context.Context, traceID string) context.Context {
 	s := fromContext(ctx)
 	s.TraceID = traceID
-	s.ParentID = causationID
 	return context.WithValue(ctx, contextKey, s)
 }
 
