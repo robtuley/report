@@ -6,23 +6,8 @@ import (
 
 const msPerNs = float64(time.Millisecond) / float64(time.Nanosecond)
 
-// StartTrace creates a new trace without a root span
-func StartTrace() Span {
-	return Span{
-		traceID: createULID(),
-	}
-}
-
-// ContinueTrace continues a previous trace
-func ContinueTrace(traceID string, parentSpanID string) Span {
-	return Span{
-		traceID: traceID,
-		spanID:  parentSpanID,
-	}
-}
-
-// EndTrace writes the data from a completed trace span
-func (l *Logger) EndTrace(s Span) <-chan int {
+// Trace writes the data from a completed trace span
+func (l *Logger) Trace(s Span) <-chan int {
 	for i := len(s.linkedSpans) - 1; i >= 0; i-- {
 		l.sendSpan(s.linkedSpans[i])
 	}

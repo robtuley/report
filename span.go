@@ -19,12 +19,14 @@ type Span struct {
 }
 
 // StartSpan creates a span
+// TODO add functional options to continue a span e.g. to add traceID and parentID
 func StartSpan(event string) Span {
 	return Span{
 		traceID:   createULID(),
 		spanID:    createULID(),
 		timestamp: time.Now(),
 		event:     event,
+		data:      Data(make(map[string]interface{})),
 	}
 }
 
