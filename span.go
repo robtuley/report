@@ -28,6 +28,16 @@ func StartSpan(event string) Span {
 	}
 }
 
+// TraceID provides the span trace ID
+func (s Span) TraceID() string {
+	return s.traceID
+}
+
+// SpanID provides the span ID
+func (s Span) SpanID() string {
+	return s.spanID
+}
+
 // Field associates key and value with the span
 func (s Span) Field(k string, v interface{}) Span {
 	s.data[k] = v
