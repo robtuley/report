@@ -75,7 +75,7 @@ func (s Span) Child(child Span) Span {
 func (s Span) FollowedBy(next Span) Span {
 	next.traceID = s.traceID
 	next.parentID = s.spanID
-	s.linkedSpans = append(s.linkedSpans, next)
+	next.linkedSpans = append(next.linkedSpans, s)
 	return next
 }
 
