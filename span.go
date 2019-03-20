@@ -19,15 +19,18 @@ type Span struct {
 }
 
 // StartSpan creates a span
-// TODO add functional options to continue a span e.g. to add traceID and parentID
-func StartSpan(event string) Span {
-	return Span{
+func StartSpan(event string, opts ...SpanOption) Span {
+	span := Span{
 		traceID:   createULID(),
 		spanID:    createULID(),
 		timestamp: time.Now(),
 		event:     event,
 		data:      Data(make(map[string]interface{})),
 	}
+	for _, opt := range opts {
+		span = opt(span)
+	}
+	return span
 }
 
 // TraceID provides the span trace ID
