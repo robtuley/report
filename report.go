@@ -26,7 +26,7 @@ type command int
 const (
 	info command = iota
 	action
-	span
+	spanCmd
 	count
 )
 
@@ -187,7 +187,7 @@ toNewTask:
 			l.errMutex.Lock()
 			l.err = errors.New("Actionable event: " + t.event)
 			l.errMutex.Unlock()
-		case span:
+		case spanCmd:
 			t.data["type"] = "span"
 		}
 
