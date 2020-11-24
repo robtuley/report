@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rainchasers/report"
+	"github.com/robtuley/report"
 	"go.uber.org/goleak"
 )
 
