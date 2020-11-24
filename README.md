@@ -2,9 +2,9 @@
 
 A simple log & trace utility for Golang services.
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/robtuley/report)](https://goreportcard.com/report/github.com/rainchasers/report)
+[![Go Report Card](https://goreportcard.com/badge/github.com/robtuley/report)](https://goreportcard.com/report/github.com/robtuley/report)
 
-[![Go Doc](https://godoc.org/github.com/robtuley/report?status.svg)](http://godoc.org/github.com/rainchasers/report)
+[![Go Doc](https://godoc.org/github.com/robtuley/report?status.svg)](http://godoc.org/github.com/robtuley/report)
 
 - `Info` & `Action` logging methods to record information or actionable errors.
 - `StartSpan` & `EndSpan` methods to record trace information.
